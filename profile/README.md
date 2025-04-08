@@ -1,12 +1,17 @@
-## Hi there 👋
+# Welcome to Smart Social Contracts 👋
 
-<!--
+We are building the future of decentralized governance, enabling anyone to create, join, or evolve digital states.
 
-**Here are some ideas to get you started:**
+🌐 Visit our website: [smartsocialcontracts.org](https://smartsocialcontracts.org)  
+🔧 Check out our tools and libraries below.  
+💬 Contact us for partnerships or questions!
 
-🙋‍♀️ A short introduction - what is your organization all about?
-🌈 Contribution guidelines - how can the community get involved?
-👩‍💻 Useful resources - where can the community find your docs? Is there anything else the community should know?
-🍿 Fun facts - what does your team eat for breakfast?
-🧙 Remember, you can do mighty things with the power of [Markdown](https://docs.github.com/github/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax)
--->
+> "Let humans organize freely and peacefully, with code."
+
+---
+
+## Our Projects
+
+- 🔗 [realm](https://github.com/SmartSocialContracts/realm) – The platform
+- 🧠 [kybra_simple_db](https://github.com/SmartSocialContracts/kybra_simple_db) – Minimal database for ICP
+- 💻 [kybra_simple_remote_console](https://github.com/SmartSocialContracts/kybra_simple_remote_console) – Python REPL on-chain
