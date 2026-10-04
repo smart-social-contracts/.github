@@ -6,7 +6,7 @@ If you discover a security vulnerability in any Smart Social Contracts project, 
 
 **Email:** contact@smartsocialcontracts.org
 
-**PGP Fingerprint:** `57CB D74C A4F4 8720 EA17  377A 22C1 FA62 0774 891C`
+**PGP Fingerprint:** `6B7B 038D EB77 849F 1F61  5E67 CA38 8313 14D6 AA09`
 
 **PGP Public Key:** [`pgp-key.asc`](pgp-key.asc)
 
