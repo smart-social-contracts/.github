@@ -1,0 +1,72 @@
+# Reusable check that a GitHub release is signed with the release key.
+#
+# Each repo calls this from its own release-verify.yml on `release: published`
+# (and on demand). The checksum file must carry a detached OpenPGP signature
+# (`<checksum file>.asc`) by `fingerprint`, and every attached asset must match
+# it. A failed check turns the release back into a draft when
+# `revert_on_failure` is set; releases that are already immutable cannot be
+# reverted, so the failed run is the record.
+name: Verify release signature
+
+on:
+  workflow_call:
+    inputs:
+      tag:
+        required: true
+        type: string
+      fingerprint:
+        description: Primary key fingerprint the signature must chain to
+        required: true
+        type: string
+      revert_on_failure:
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout the release key and checker
+        uses: actions/checkout@v4
+        with:
+          repository: smart-social-contracts/.github
+          ref: main
+          path: org
+
+      - name: Download the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag }}
+        run: gh release download "$TAG" -R "$GITHUB_REPOSITORY" -D release
+
+      - name: Check assets and signature
+        env:
+          FPR: ${{ inputs.fingerprint }}
+        run: |
+          set -euo pipefail
+          sums=$(python3 org/scripts/check-release-assets.py release)
+          if [ ! -f "release/$sums.asc" ]; then
+            echo "::error::$sums.asc is missing: the release is not signed"
+            exit 1
+          fi
+          export GNUPGHOME=$(mktemp -d)
+          gpg --batch --quiet --import org/pgp-key.asc
+          gpg --batch --status-fd 3 --verify "release/$sums.asc" "release/$sums" 3>status
+          signer=$(awk '$2 == "VALIDSIG" { print $NF }' status)
+          if [ "$signer" != "$FPR" ]; then
+            echo "::error::$sums.asc is not a valid signature by $FPR (got '${signer:-none}')"
+            exit 1
+          fi
+          echo "$sums is signed by $FPR and matches every asset."
+
+      - name: Return the release to draft
+        if: ${{ failure() && inputs.revert_on_failure }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag }}
+        run: |
+          gh release edit "$TAG" -R "$GITHUB_REPOSITORY" --draft=true \
+            || echo "::warning::could not return $TAG to draft (immutable release?)"
