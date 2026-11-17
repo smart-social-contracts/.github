@@ -19,9 +19,28 @@ import gzip
 import hashlib
 import re
 import sys
+import zlib
 from pathlib import Path
 
 LINE = re.compile(r"^([0-9a-f]{64})\s+\*?(\S+)\s*(\((bundle|module|tar)\))?\s*$")
+
+# A (tar) line makes the script decompress an archive, and a verifier runs it on
+# bytes someone else built, so the read is streamed and capped rather than held
+# in memory. Our own source archives are a few MiB.
+TAR_LIMIT = 512 * 1024 * 1024
+CHUNK = 1024 * 1024
+
+
+def tar_sha256(path: Path) -> str:
+    """sha256 of the tar inside a gzip archive, read in chunks, capped."""
+    digest, total = hashlib.sha256(), 0
+    with gzip.open(path, "rb") as archive:
+        while chunk := archive.read(CHUNK):
+            total += len(chunk)
+            if total > TAR_LIMIT:
+                raise ValueError(f"it holds over {TAR_LIMIT // 1024 // 1024} MiB")
+            digest.update(chunk)
+    return digest.hexdigest()
 
 
 def main(directory: str) -> int:
@@ -53,11 +72,10 @@ def main(directory: str) -> int:
                 errors.append(f"{name}: a (tar) line names an archive not attached to the release")
                 continue
             try:
-                inner = gzip.decompress(path.read_bytes())
-            except (OSError, EOFError) as exc:
-                errors.append(f"{name}: a (tar) line names something that is not gzip ({exc})")
+                actual = tar_sha256(path)
+            except (OSError, EOFError, ValueError, zlib.error) as exc:
+                errors.append(f"{name}: the tar inside it could not be read ({exc})")
                 continue
-            actual = hashlib.sha256(inner).hexdigest()
             if actual != digest:
                 errors.append(f"{name}: the tar inside it is sha256 {actual}, not {digest}")
             continue
